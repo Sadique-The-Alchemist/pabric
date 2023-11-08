@@ -5,13 +5,12 @@ defmodule Pabric.Sheet.Acrylic do
   alias :ets, as: PabricTerm
   alias Pabric.Sheet.Cell
   alias Pabric.Sheet.Leaf
-  @initial_cell "A1"
-  def init({name, size}) do
-    %{keys: keys} = sheet = quick_sheet(name, size)
+
+  def init({name, columns, headers}) do
+    %{keys: keys} = sheet = quick_sheet(name, columns, headers)
     PabricTerm.new(name, [:set, :protected, :named_table])
     iniitialize_sheet(name, keys)
-    [{_key, initial_cell}] = PabricTerm.lookup(name, @initial_cell)
-    # IO.inspect(keys, label: "Started with keys")
+    [{_key, initial_cell}] = PabricTerm.lookup(name, keys |> hd() |> hd())
     Logger.info("Started acrylik with keys #{keys}")
     {:ok, %__MODULE__{current_cell: initial_cell, name: name, sheet: sheet}}
   end
@@ -20,12 +19,16 @@ defmodule Pabric.Sheet.Acrylic do
     GenServer.call(__MODULE__, :sheet)
   end
 
+  def spread_sheet() do
+    GenServer.call(__MODULE__, :spread_sheet)
+  end
+
   def current_cell() do
     GenServer.call(__MODULE__, :current_cell)
   end
 
-  def render(name, size) do
-    GenServer.start_link(__MODULE__, {name, size}, name: __MODULE__)
+  def render(name, columns, headers) do
+    GenServer.start_link(__MODULE__, {name, columns, headers}, name: __MODULE__)
   end
 
   def focus(key) do
@@ -43,6 +46,7 @@ defmodule Pabric.Sheet.Acrylic do
       ) do
     cell = %{current_cell | value: value}
     PabricTerm.update_element(name, key, {2, cell})
+    IO.inspect(cell)
     {:reply, cell, %{state | current_cell: cell}}
   end
 
@@ -59,21 +63,31 @@ defmodule Pabric.Sheet.Acrylic do
     {:reply, sheet, state}
   end
 
+  def handle_call(
+        :spread_sheet,
+        _from,
+        %__MODULE__{current_cell: _current_cell, sheet: sheet} = state
+      ) do
+    res = PabricTerm.match_object(sheet.name, {:"$1", :"$2"})
+    IO.inspect(res)
+    {:reply, %{sheet | sheet: res}, state}
+  end
+
   def handle_call(:current_cell, _from, %__MODULE__{current_cell: current_cell} = state) do
     {:reply, current_cell, state}
   end
 
-  defp quick_sheet(name, {x, y} = size) do
+  defp quick_sheet(name, columns, headers) do
     keys =
-      1..y
+      1..10
       |> Enum.map(fn y ->
-        1..x
-        |> Enum.map(fn x ->
-          "#{Integer.to_string(x + 9, 36)}#{y}"
+        headers
+        |> Enum.map(fn header ->
+          "#{header}#{y}"
         end)
       end)
 
-    %Leaf{name: name, size: size, keys: keys}
+    %Leaf{name: name, columns: columns, keys: keys, headers: headers}
   end
 
   defp iniitialize_sheet(name, keys) do

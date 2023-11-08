@@ -7,17 +7,37 @@ defmodule PabricWeb.SheetComonent do
   def new(assigns) do
     ~H"""
     <.form for={@sheet} phx-submit={@submit}>
-      <.input id="name" type="text" name="name" value="" field={@sheet[:name]} />
-      <.input id="x" type="text" name="sizex" value="" field={@sheet[:sizex]} />
-      <.input id="y" type="text" name="sizey" value="" field={@sheet[:sizey]} />
-      <button>Create</button>
+      <div class="relative">
+        <div class="flex space-x-3 my-3">
+          <.input id="name" type="text" name="name" value="" label="Name" field={@sheet[:name]} />
+          <.input
+            id="columns"
+            type="text"
+            name="columns"
+            value=""
+            label="Columns"
+            field={@sheet[:columns]}
+          />
+          <.input
+            id="headers"
+            type="text"
+            name="headers"
+            value=""
+            label="Headers"
+            field={@sheet[:headers]}
+          />
+        </div>
+        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 h-1/2 rounded">
+          Create
+        </button>
+      </div>
     </.form>
     """
   end
 
   def cell(assigns) do
     ~H"""
-    <.form for={@cell} phx-submit={@submit}>
+    <.form for={@cell} phx-submit={@submit} class="w-full">
       <.cell_input
         id={@cell["key"]}
         type="text"
@@ -27,6 +47,7 @@ defmodule PabricWeb.SheetComonent do
         errors={@cell["errors"]}
         phx-click={JS.push("focus", value: %{id: @cell["key"]})}
         phx-change={JS.push("write", value: %{id: @cell["key"]})}
+        class="w-fit"
       />
       <.input id="key" type="hidden" name="cell_key" value={@cell["key"]} />
     </.form>
@@ -35,16 +56,24 @@ defmodule PabricWeb.SheetComonent do
 
   attr :id, :string, required: true
   attr :keys, :list, required: true
+  attr :headers, :list, required: true
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :cell, :any, required: true, doc: "The function for generating cell"
 
   def spread(assigns) do
     ~H"""
-    <div class="overflow-y-auto h-40 px-1 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] mt-1 sm:w-full">
+    <div class="overflow-scroll snap-both h-1/2 px-1 sm:px-0">
+      <table class="w-[40rem] mt-1 sm:w-full border border-zinc-500">
+        <thead class="text-sm font-semibold text-center leading-6 text-zinc-800">
+          <tr>
+            <th :for={header <- @headers} class="p-0 pr-6 pb-4 font-normal border border-zinc-500">
+              <%= header %>
+            </th>
+          </tr>
+        </thead>
         <tbody>
           <tr :for={row <- @keys} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50">
-            <td :for={key <- row}>
+            <td :for={key <- row} class="border border-zinc-500">
               <div>
                 <.cell cell={@cell && @cell.(key)} submit={JS.push("write", value: %{id: key})} />
               </div>
@@ -80,8 +109,8 @@ defmodule PabricWeb.SheetComonent do
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
           "block w-full text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
+          "phx-no-feedback:border-zinc-50 phx-no-feedback:focus:border-zinc-400",
+          @errors == [] && "focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400"
         ]}
         {@rest}

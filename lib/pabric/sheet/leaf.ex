@@ -1,3 +1,3 @@
 defmodule Pabric.Sheet.Leaf do
-  defstruct [:name, :size, :keys, :sheet]
+  defstruct [:name, :columns, :keys, :headers, :sheet]
 end

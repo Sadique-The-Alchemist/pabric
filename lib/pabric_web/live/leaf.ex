@@ -7,30 +7,47 @@ defmodule PabricWeb.LeafLive do
 
   def render(assigns) do
     ~H"""
-    <div>
+    <div class="h-screen">
       <.new sheet={@sheet} submit="create" />
       <%= if @keys do %>
-        <.spread id="pabric" keys={@keys} cell={@cell} />
+        <.spread id="pabric" keys={@keys} cell={@cell} headers={@headers} />
       <% end %>
     </div>
     """
   end
 
   def mount(_params, _session, socket) do
-    sheet = %{"name" => "", "sizex" => "", "sizey" => ""}
+    sheet = %{"name" => "", "columns" => "", "headers" => ""}
 
     socket = socket |> assign(sheet: sheet, keys: nil)
     {:ok, socket}
   end
 
-  def handle_event("create", %{"name" => name, "sizex" => x, "sizey" => y}, socket) do
+  def handle_event(
+        "create",
+        %{"name" => name, "columns" => columns, "headers" => headers},
+        socket
+      ) do
     name = String.to_atom(name)
-    size = {String.to_integer(x), String.to_integer(y)}
-    Acrylic.render(name, size)
+    headers = headers |> String.split(",") |> Enum.map(fn header -> String.trim(header) end)
+    columns = String.to_integer(columns)
+    Acrylic.render(name, columns, headers)
+
     %{keys: keys} = Acrylic.render_sheet()
     row_id = fn row -> make_row_id(row) end
     cell = fn key -> align_cell(key) end
-    socket = socket |> assign(keys: keys, name: name, size: size, row_id: row_id, cell: cell)
+
+    socket =
+      socket
+      |> assign(
+        keys: keys,
+        name: name,
+        columns: columns,
+        headers: headers,
+        row_id: row_id,
+        cell: cell
+      )
+
     {:noreply, socket}
   end
 
