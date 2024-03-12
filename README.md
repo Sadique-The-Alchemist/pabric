@@ -1,7 +1,12 @@
 # Pabric
 
-Pabric is a ETS backed table view to create view and edit tabular data
+Pabric is a ETS backed table view which can populate rows and columns based on the input gave on the sheet view
+The view has three fields, 
+Name: Name of the table
+Columns count: Integer number represents the count of columns on table
+Headers: Give headers of the columns as coma separated 
 
+![Screenshot](image.png)
 To start your Phoenix server:
 
   * Run `mix setup` to install and setup dependencies
